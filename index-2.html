@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Savings">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>Savings Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .date {
+            font-size: 16px;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 60px;
+            letter-spacing: 0.5px;
+        }
+
+        .amount {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+
+        .label {
+            font-size: 18px;
+            font-weight: 400;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+
+        .projection {
+            font-size: 16px;
+            font-weight: 400;
+            opacity: 0.7;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-container {
+            margin-bottom: 30px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
+            transition: width 0.5s ease;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-percent {
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .projection-amount {
+            font-size: 32px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .projection.hidden {
+            display: none;
+        }
+
+        @media (max-width: 375px) {
+            .amount {
+                font-size: 64px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-btn" id="toggleBtn" onclick="toggleProjection()">👁️</button>
+    <div class="container">
+        <div class="date" id="currentDate"></div>
+        <div class="amount" id="savingsAmount">$0</div>
+        <div class="label">Target Savings</div>
+        <div class="projection" id="projection">
+            <div class="progress-container">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBar">
+                        <span class="progress-text" id="progressText">$0</span>
+                    </div>
+                </div>
+                <div class="progress-percent" id="progressPercent">0% complete</div>
+            </div>
+            <div>Projected by Dec 31, 2026</div>
+            <div class="projection-amount" id="projectionAmount">$0</div>
+        </div>
+    </div>
+
+    <script>
+        function formatDate(date) {
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function calculateSavings() {
+            const startDate = new Date('2026-01-03'); // First Friday after 1/2/26
+            const today = new Date();
+            
+            // Reset time portions for accurate day comparison
+            startDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            
+            // Calculate number of Fridays that have passed
+            let fridayCount = 0;
+            let currentDate = new Date(startDate);
+            
+            while (currentDate <= today) {
+                fridayCount++;
+                currentDate.setDate(currentDate.getDate() + 7); // Move to next Friday
+            }
+            
+            return fridayCount * 100;
+        }
+
+        function calculateYearEndProjection() {
+            const startDate = new Date('2026-01-03');
+            const today = new Date();
+            const endDate = new Date(today.getFullYear(), 11, 31); // Dec 31 of current year
+            
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+            
+            // Calculate total Fridays from start to end of current year
+            let fridayCount = 0;
+            let currentDate = new Date(startDate);
+            
+            while (currentDate <= endDate) {
+                fridayCount++;
+                currentDate.setDate(currentDate.getDate() + 7);
+            }
+            
+            return fridayCount * 100;
+        }
+
+        function updateDisplay() {
+            const today = new Date();
+            document.getElementById('currentDate').textContent = formatDate(today);
+            
+            const savings = calculateSavings();
+            document.getElementById('savingsAmount').textContent = `$${savings.toLocaleString()}`;
+            
+            const projection = calculateYearEndProjection();
+            document.getElementById('projectionAmount').textContent = `$${projection.toLocaleString()}`;
+            
+            // Update projection label with current year
+            document.querySelector('.projection > div:last-of-type').previousElementSibling.textContent = 
+                `Projected by Dec 31, ${today.getFullYear()}`;
+            
+            // Update progress bar
+            const percentage = projection > 0 ? (savings / projection) * 100 : 0;
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const progressPercent = document.getElementById('progressPercent');
+            
+            progressBar.style.width = `${Math.min(percentage, 100)}%`;
+            progressText.textContent = `$${savings.toLocaleString()}`;
+            progressPercent.textContent = `${Math.round(percentage)}% complete`;
+        }
+
+        function toggleProjection() {
+            const projection = document.getElementById('projection');
+            const btn = document.getElementById('toggleBtn');
+            
+            if (projection.classList.contains('hidden')) {
+                projection.classList.remove('hidden');
+                btn.textContent = '👁️';
+                localStorage.setItem('showProjection', 'true');
+            } else {
+                projection.classList.add('hidden');
+                btn.textContent = '👁️‍🗨️';
+                localStorage.setItem('showProjection', 'false');
+            }
+        }
+
+        function loadPreference() {
+            const showProjection = localStorage.getItem('showProjection');
+            if (showProjection === 'false') {
+                document.getElementById('projection').classList.add('hidden');
+                document.getElementById('toggleBtn').textContent = '👁️‍🗨️';
+            }
+        }
+
+        // Update on load
+        loadPreference();
+        updateDisplay();
+
+        // Update at midnight
+        setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 0 && now.getMinutes() === 0) {
+                updateDisplay();
+            }
+        }, 60000); // Check every minute
+    </script>
+</body>
+</html>
